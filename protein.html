@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Protein Structure Unfolded</title>
+    <style>
+        /* Base Styles & Dark Theme */
+        body { 
+            margin: 0; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: #0f172a; /* Deep blue-dark */
+            color: #f8fafc; 
+            overflow-x: hidden; 
+        }
+
+        /* Full-screen sections */
+        .section { 
+            min-height: 100vh; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: center; 
+            text-align: center; 
+            padding: 2rem; 
+        }
+        
+        h1 { font-size: 3.5rem; margin-bottom: 0.5rem; color: #38bdf8; }
+        h2 { font-size: 2.5rem; color: #e2e8f0; margin-bottom: 1rem; }
+        p { max-width: 650px; font-size: 1.25rem; line-height: 1.6; color: #94a3b8; }
+
+        /* Animation Container */
+        .anim-container { 
+            height: 250px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            margin-top: 2rem; 
+            width: 100%; 
+        }
+
+        /* 1. Primary Structure: Animated Amino Acid Chain */
+        .bead { 
+            width: 25px; height: 25px; 
+            background: #fbbf24; 
+            border-radius: 50%; 
+            margin: 0 5px; 
+            animation: pulse 1.5s infinite alternate; 
+            box-shadow: 0 0 10px rgba(251, 191, 36, 0.5);
+        }
+        .bead:nth-child(even) { background: #f87171; animation-delay: 0.5s; box-shadow: 0 0 10px rgba(248, 113, 113, 0.5); }
+        .bead:nth-child(3n) { background: #34d399; animation-delay: 1s; box-shadow: 0 0 10px rgba(52, 211, 153, 0.5); }
+        .link { width: 20px; height: 4px; background: #475569; }
+
+        @keyframes pulse { 
+            from { transform: scale(0.8); opacity: 0.7; } 
+            to { transform: scale(1.2); opacity: 1; } 
+        }
+
+        /* 2. Secondary Structure: Alpha Helix Wave Illusion */
+        .helix { display: flex; gap: 8px; align-items: center; }
+        .helix-bar { 
+            width: 10px; height: 80px; 
+            background: #a78bfa; 
+            border-radius: 10px; 
+            animation: wave 2s infinite ease-in-out; 
+        }
+        /* Stagger the animation to create a wave */
+        .helix-bar:nth-child(1) { animation-delay: 0.1s; }
+        .helix-bar:nth-child(2) { animation-delay: 0.2s; }
+        .helix-bar:nth-child(3) { animation-delay: 0.3s; }
+        .helix-bar:nth-child(4) { animation-delay: 0.4s; }
+        .helix-bar:nth-child(5) { animation-delay: 0.5s; }
+        .helix-bar:nth-child(6) { animation-delay: 0.6s; }
+        .helix-bar:nth-child(7) { animation-delay: 0.7s; }
+        .helix-bar:nth-child(8) { animation-delay: 0.8s; }
+        .helix-bar:nth-child(9) { animation-delay: 0.9s; }
+        .helix-bar:nth-child(10) { animation-delay: 1.0s; }
+        
+        @keyframes wave { 
+            0%, 100% { transform: translateY(0) scaleY(1); background: #a78bfa; } 
+            50% { transform: translateY(-40px) scaleY(0.4); background: #c084fc; } 
+        }
+
+        /* 3. Tertiary Structure: 3D Morphing Protein Fold */
+        .blob { 
+            width: 180px; height: 180px; 
+            background: linear-gradient(135deg, #38bdf8, #818cf8); 
+            border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%; 
+            animation: morph 6s ease-in-out infinite; 
+            box-shadow: inset 20px 20px 40px rgba(0,0,0,0.2), 0 0 40px rgba(56,189,248,0.4); 
+        }
+        
+        @keyframes morph { 
+            0%, 100% { border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%; transform: rotate(0deg) scale(1); } 
+            50% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; transform: rotate(180deg) scale(1.1); } 
+        }
+
+        /* 4. Quaternary Structure: Interlocking Subunits */
+        .quat-container { 
+            position: relative; 
+            width: 250px; height: 250px; 
+            animation: spin 12s linear infinite; 
+        }
+        .q-blob { 
+            position: absolute; 
+            width: 130px; height: 130px; 
+            border-radius: 50% 60% 40% 50%; 
+            mix-blend-mode: screen; 
+            box-shadow: inset 10px 10px 20px rgba(0,0,0,0.3);
+        }
+        .q-blob.one { top: 10px; left: 10px; background: #ef4444; animation: morph 5s infinite; }
+        .q-blob.two { top: 10px; right: 10px; background: #3b82f6; animation: morph 6s infinite reverse; }
+        .q-blob.three { bottom: 10px; left: 10px; background: #10b981; animation: morph 7s infinite; }
+        .q-blob.four { bottom: 10px; right: 10px; background: #eab308; animation: morph 5.5s infinite reverse; }
+        
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        /* Scroll Reveal Effect */
+        .reveal { 
+            opacity: 0; 
+            transform: translateY(80px); 
+            transition: all 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94); 
+        }
+        .reveal.active { opacity: 1; transform: translateY(0); }
+
+        /* Down Arrow */
+        .arrow { margin-top: 3rem; font-size: 2rem; animation: bounce 2s infinite; color: #475569; }
+        @keyframes bounce { 0%, 20%, 50%, 80%, 100% { transform: translateY(0); } 40% { transform: translateY(-20px); } 60% { transform: translateY(-10px); } }
+    </style>
+</head>
+<body>
+
+    <div class="section">
+        <div class="reveal">
+            <h1>Protein Structure Unfolded</h1>
+            <p>Scroll down to see the four distinct levels of protein architecture come to life. From a simple chain to a complex biological machine.</p>
+            <div class="arrow">↓</div>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="reveal">
+            <h2>1. Primary Structure</h2>
+            <p>The foundation of a protein is its sequence of amino acids, connected by peptide bonds. Think of it like a specific sequence of glowing beads on a string. The order determines everything that follows.</p>
+            <div class="anim-container">
+                <div class="bead"></div><div class="link"></div>
+                <div class="bead"></div><div class="link"></div>
+                <div class="bead"></div><div class="link"></div>
+                <div class="bead"></div><div class="link"></div>
+                <div class="bead"></div><div class="link"></div>
+                <div class="bead"></div><div class="link"></div>
+                <div class="bead"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="reveal">
+            <h2>2. Secondary Structure</h2>
+            <p>Hydrogen bonds begin to form between the amino acids, causing the linear chain to twist and fold locally. The most common shapes are the twisting <strong>Alpha Helix</strong> (shown below) and the flat <strong>Beta-Pleated Sheet</strong>.</p>
+            <div class="anim-container">
+                <div class="helix">
+                    <div class="helix-bar"></div><div class="helix-bar"></div>
+                    <div class="helix-bar"></div><div class="helix-bar"></div>
+                    <div class="helix-bar"></div><div class="helix-bar"></div>
+                    <div class="helix-bar"></div><div class="helix-bar"></div>
+                    <div class="helix-bar"></div><div class="helix-bar"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="reveal">
+            <h2>3. Tertiary Structure</h2>
+            <p>The helices and sheets fold in on themselves to create a highly specific, three-dimensional shape. This complex folding is driven by side-chain interactions, creating a functional, dynamic "blob".</p>
+            <div class="anim-container">
+                <div class="blob"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="reveal">
+            <h2>4. Quaternary Structure</h2>
+            <p>Many proteins aren't finished yet! They consist of multiple folded polypeptide chains (subunits) that lock together to form one massive, functional complex, like hemoglobin or DNA polymerase.</p>
+            <div class="anim-container">
+                <div class="quat-container">
+                    <div class="q-blob one"></div>
+                    <div class="q-blob two"></div>
+                    <div class="q-blob three"></div>
+                    <div class="q-blob four"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const reveals = document.querySelectorAll('.reveal');
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('active');
+                }
+            });
+        }, { threshold: 0.15 });
+        
+        reveals.forEach(reveal => observer.observe(reveal));
+    </script>
+</body>
+</html>
