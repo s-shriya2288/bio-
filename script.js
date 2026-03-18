@@ -1,24 +1,32 @@
 let viewer;
+let isSpinning = true;
 
-// Initialize the viewer once the page loads
 document.addEventListener("DOMContentLoaded", function() {
     let element = document.querySelector('#container-01');
-    let config = { backgroundColor: 'black' };
-    viewer = $3Dmol.createViewer(element, config);
+    viewer = $3Dmol.createViewer(element, { backgroundColor: 'black' });
 
-    // Fetching a protein from the Protein Data Bank (PDB)
-    // 1A21 is a human growth hormone complex
-    $3Dmol.download("pdb:1A21", viewer, {}, function() {
+    // Loading a stunning protein (Insulin)
+    $3Dmol.download("pdb:4ins", viewer, {}, function() {
         viewer.setStyle({}, {cartoon: {color: 'spectrum'}});
         viewer.zoomTo();
         viewer.render();
-        viewer.spin(true); // This starts the auto-animation/rotation
+        viewer.spin(true);
     });
 });
 
-function changeStyle(styleName) {
-    if(styleName === 'stick') viewer.setStyle({}, {stick: {}});
-    if(styleName === 'sphere') viewer.setStyle({}, {sphere: {}});
-    if(styleName === 'cartoon') viewer.setStyle({}, {cartoon: {color: 'spectrum'}});
+function updateView(type) {
+    viewer.removeAllShapes(); // Clean view
+    if (type === 'cartoon') {
+        viewer.setStyle({}, {cartoon: {color: 'spectrum'}});
+    } else if (type === 'sphere') {
+        viewer.setStyle({}, {sphere: {scale: 0.3}, cartoon: {color: 'cyan', opacity: 0.5}});
+    } else if (type === 'stick') {
+        viewer.setStyle({}, {stick: {radius: 0.2}});
+    }
     viewer.render();
+}
+
+function toggleSpin() {
+    isSpinning = !isSpinning;
+    viewer.spin(isSpinning);
 }
