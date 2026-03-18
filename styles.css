@@ -1,0 +1,36 @@
+body {
+    margin: 0;
+    background-color: #050505;
+    color: white;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    text-align: center;
+}
+
+.mol-container {
+    width: 80%;
+    height: 600px;
+    margin: 20px auto;
+    border: 2px solid #333;
+    border-radius: 15px;
+    position: relative;
+}
+
+.controls {
+    margin-top: 20px;
+}
+
+button {
+    padding: 10px 20px;
+    margin: 5px;
+    cursor: pointer;
+    background: #222;
+    color: cyan;
+    border: 1px solid cyan;
+    border-radius: 5px;
+    transition: 0.3s;
+}
+
+button:hover {
+    background: cyan;
+    color: black;
+}
