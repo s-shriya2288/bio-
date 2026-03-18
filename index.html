@@ -3,43 +3,178 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BioSynth | Molecular Explorer</title>
-    <link rel="stylesheet" href="style.css">
-    <script src="https://3dmol.org/build/3Dmol-min.js"></script>
+    <title>BioSynth | All-In-One Explorer</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/3Dmol/2.0.4/3Dmol-min.js"></script>
+
+    <style>
+        /* 2. THE CSS (The "Look") */
+        :root {
+            --neon-blue: #00f2ff;
+            --dark-bg: #0a0b10;
+            --glass: rgba(255, 255, 255, 0.05);
+        }
+
+        body {
+            margin: 0;
+            background-color: var(--dark-bg);
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        /* Animated Scanline */
+        .scanline {
+            width: 100%; height: 2px;
+            background: rgba(0, 242, 255, 0.1);
+            position: absolute; z-index: 10;
+            animation: scan 4s linear infinite;
+            pointer-events: none;
+        }
+        @keyframes scan { from { top: 0; } to { top: 100%; } }
+
+        .glass-header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 15px 30px; background: var(--glass);
+            backdrop-filter: blur(10px); border-bottom: 1px solid var(--neon-blue);
+        }
+
+        .logo { font-weight: bold; letter-spacing: 2px; color: var(--neon-blue); }
+
+        .search-box input {
+            background: #111; border: 1px solid #444; color: white;
+            padding: 8px; border-radius: 4px; outline: none;
+        }
+
+        .viewer-layout {
+            display: flex; height: calc(100vh - 80px); padding: 15px; gap: 15px;
+        }
+
+        .glass {
+            background: var(--glass); backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px; padding: 20px;
+            display: flex; flex-direction: column; gap: 12px;
+            width: 260px;
+        }
+
+        .main-viewer {
+            flex-grow: 1; border-radius: 15px; border: 1px solid rgba(0, 242, 255, 0.3);
+            box-shadow: inset 0 0 30px rgba(0, 0, 0, 1);
+            position: relative;
+        }
+
+        button {
+            background: transparent; border: 1px solid var(--neon-blue);
+            color: var(--neon-blue); padding: 10px; cursor: pointer;
+            text-transform: uppercase; font-size: 0.75rem; transition: 0.3s;
+        }
+
+        button:hover {
+            background: var(--neon-blue); color: black;
+            box-shadow: 0 0 15px var(--neon-blue);
+        }
+
+        #status-tag { color: var(--neon-blue); font-weight: bold; font-family: monospace; }
+    </style>
 </head>
 <body>
+
     <div class="scanline"></div>
     
     <nav class="glass-header">
-        <div class="logo">BIOSYNTH <span>v2.0</span></div>
-        <div class="status-indicator">● SYSTEM ONLINE</div>
+        <div class="logo">BIOSYNTH // MOLECULAR_LAB</div>
+        <div class="search-box">
+            <input type="text" id="pdb-input" placeholder="Enter PDB ID (e.g., 1A21)">
+            <button onclick="loadNewProtein()">FETCH DATA</button>
+        </div>
     </nav>
 
     <main class="viewer-layout">
         <aside class="sidebar-left glass">
-            <h3>Structure Intel</h3>
-            <div class="data-point">ID: <span id="pdb-id">1A21</span></div>
-            <div class="data-point">Resolution: <span>2.2 Å</span></div>
-            <p class="description">This complex represents the human growth hormone bound to its receptor. Observe the alpha-helix bundles in the ribbon view.</p>
-            
-            <div class="control-group">
-                <label>Visualization Mode</label>
-                <button onclick="updateView('cartoon')">Ribbon (Primary)</button>
-                <button onclick="updateView('sphere')">Atomic Surface</button>
-                <button onclick="updateView('stick')">Chemical Bonds</button>
-            </div>
+            <h3>ANALYTICS</h3>
+            <div>ID: <span id="status-tag">LOADING...</span></div>
+            <p style="font-size: 0.85rem; opacity: 0.7;">
+                Visualizing atomic coordinates and secondary structures in real-time.
+            </p>
+            <hr style="border: 0.5px solid #333; width: 100%;">
+            <button onclick="updateView('cartoon')">Spectrum Ribbon</button>
+            <button onclick="updateView('sphere')">Space Fill</button>
+            <button onclick="updateView('stick')">Atomic Sticks</button>
+            <button onclick="updateView('surface')">Molecular Surface</button>
         </aside>
 
-        <section id="container-01" class="main-viewer"></section>
+        <div id="container-01" class="main-viewer"></div>
 
         <aside class="sidebar-right glass">
-            <h3>Animate</h3>
-            <button class="pulse-btn" onclick="toggleSpin()">Toggle Rotation</button>
-            <button onclick="viewer.zoomTo()">Recenter Camera</button>
-            <div class="footer-note">Scroll to Zoom • Drag to Rotate</div>
+            <h3>CONTROLS</h3>
+            <button onclick="toggleSpin()" style="border-color: #ff00ff; color: #ff00ff;">STOP/START SPIN</button>
+            <button onclick="viewer.zoomTo()">RE-CENTER</button>
+            <div style="font-size: 0.7rem; margin-top: auto; opacity: 0.5;">
+                LEFT CLICK: ROTATE<br>
+                RIGHT CLICK: PAN<br>
+                SCROLL: ZOOM
+            </div>
         </aside>
     </main>
 
-    <script src="script.js"></script>
+    <script>
+        /* 3. THE JAVASCRIPT (The "Brain") */
+        let viewer;
+        let isSpinning = true;
+
+        window.onload = function() {
+            // Setup viewer
+            viewer = $3Dmol.createViewer(document.querySelector('#container-01'), { backgroundColor: 'black' });
+            
+            // Load default (Human Insulin)
+            loadProtein("4ins");
+        };
+
+        function loadProtein(pdbId) {
+            document.getElementById('status-tag').innerText = "FETCHING...";
+            viewer.clear(); // Wipe old protein
+
+            $3Dmol.download("pdb:" + pdbId, viewer, {}, function() {
+                // Apply Initial Color and Style
+                viewer.setStyle({}, {cartoon: {color: 'spectrum'}});
+                viewer.zoomTo();
+                viewer.render();
+                
+                // Start the cinematic animation
+                viewer.spin(true);
+                isSpinning = true;
+                document.getElementById('status-tag').innerText = pdbId.toUpperCase();
+            });
+        }
+
+        function loadNewProtein() {
+            let val = document.getElementById('pdb-input').value.trim();
+            if(val) loadProtein(val);
+        }
+
+        function updateView(type) {
+            viewer.removeAllShapes();
+            viewer.removeAllSurfaces();
+            
+            if (type === 'cartoon') {
+                viewer.setStyle({}, {cartoon: {color: 'spectrum'}});
+            } else if (type === 'sphere') {
+                viewer.setStyle({}, {sphere: {}});
+            } else if (type === 'stick') {
+                viewer.setStyle({}, {stick: {radius: 0.2, colorscheme: 'Jmol'}});
+            } else if (type === 'surface') {
+                viewer.setStyle({}, {cartoon: {color: 'white'}});
+                viewer.addSurface($3Dmol.SurfaceType.VDW, {opacity: 0.5, color: 'cyan'});
+            }
+            viewer.render();
+        }
+
+        function toggleSpin() {
+            isSpinning = !isSpinning;
+            viewer.spin(isSpinning);
+        }
+    </script>
 </body>
 </html>
