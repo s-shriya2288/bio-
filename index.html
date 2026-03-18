@@ -3,24 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Protein Visualizer Pro</title>
+    <title>BioSynth | Molecular Explorer</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://3dmol.org/build/3Dmol-min.js"></script>
 </head>
 <body>
-    <header>
-        <h1>Microscopic Protein Explorer</h1>
-        <p>Real-time 3D structure visualization</p>
-    </header>
+    <div class="scanline"></div>
+    
+    <nav class="glass-header">
+        <div class="logo">BIOSYNTH <span>v2.0</span></div>
+        <div class="status-indicator">● SYSTEM ONLINE</div>
+    </nav>
 
-    <main>
-        <div id="container-01" class="mol-container"></div>
-        
-        <div class="controls">
-            <button onclick="changeStyle('stick')">Stick View</button>
-            <button onclick="changeStyle('sphere')">Space Fill</button>
-            <button onclick="changeStyle('cartoon')">Cartoon (Ribbon)</button>
-        </div>
+    <main class="viewer-layout">
+        <aside class="sidebar-left glass">
+            <h3>Structure Intel</h3>
+            <div class="data-point">ID: <span id="pdb-id">1A21</span></div>
+            <div class="data-point">Resolution: <span>2.2 Å</span></div>
+            <p class="description">This complex represents the human growth hormone bound to its receptor. Observe the alpha-helix bundles in the ribbon view.</p>
+            
+            <div class="control-group">
+                <label>Visualization Mode</label>
+                <button onclick="updateView('cartoon')">Ribbon (Primary)</button>
+                <button onclick="updateView('sphere')">Atomic Surface</button>
+                <button onclick="updateView('stick')">Chemical Bonds</button>
+            </div>
+        </aside>
+
+        <section id="container-01" class="main-viewer"></section>
+
+        <aside class="sidebar-right glass">
+            <h3>Animate</h3>
+            <button class="pulse-btn" onclick="toggleSpin()">Toggle Rotation</button>
+            <button onclick="viewer.zoomTo()">Recenter Camera</button>
+            <div class="footer-note">Scroll to Zoom • Drag to Rotate</div>
+        </aside>
     </main>
 
     <script src="script.js"></script>
