@@ -3,177 +3,116 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BioSynth | All-In-One Explorer</title>
-    
+    <title>BioSynth | Interactive Guide</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/3Dmol/2.0.4/3Dmol-min.js"></script>
 
     <style>
-        /* 2. THE CSS (The "Look") */
-        :root {
-            --neon-blue: #00f2ff;
-            --dark-bg: #0a0b10;
-            --glass: rgba(255, 255, 255, 0.05);
+        :root { --neon: #00f2ff; --pink: #ff00ff; --bg: #050608; }
+        body { margin: 0; background: var(--bg); color: white; font-family: 'Inter', sans-serif; overflow: hidden; }
+        
+        /* Layout */
+        .wrapper { display: grid; grid-template-columns: 350px 1fr; height: 100vh; }
+        
+        /* Sidebar */
+        .sidebar { 
+            padding: 30px; background: rgba(255,255,255,0.03); 
+            border-right: 1px solid rgba(0,242,255,0.2);
+            display: flex; flex-direction: column; gap: 20px;
+            backdrop-filter: blur(10px);
         }
 
-        body {
-            margin: 0;
-            background-color: var(--dark-bg);
-            color: white;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            overflow: hidden;
-            height: 100vh;
+        .info-card {
+            background: rgba(0,0,0,0.5); border-left: 3px solid var(--neon);
+            padding: 15px; margin-top: 20px; transition: 0.5s;
         }
 
-        /* Animated Scanline */
-        .scanline {
-            width: 100%; height: 2px;
-            background: rgba(0, 242, 255, 0.1);
-            position: absolute; z-index: 10;
-            animation: scan 4s linear infinite;
-            pointer-events: none;
-        }
-        @keyframes scan { from { top: 0; } to { top: 100%; } }
+        /* 3D Viewer */
+        .viewer-container { position: relative; background: #000; }
+        #mol-view { width: 100%; height: 100%; }
 
-        .glass-header {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 15px 30px; background: var(--glass);
-            backdrop-filter: blur(10px); border-bottom: 1px solid var(--neon-blue);
-        }
-
-        .logo { font-weight: bold; letter-spacing: 2px; color: var(--neon-blue); }
-
-        .search-box input {
-            background: #111; border: 1px solid #444; color: white;
-            padding: 8px; border-radius: 4px; outline: none;
-        }
-
-        .viewer-layout {
-            display: flex; height: calc(100vh - 80px); padding: 15px; gap: 15px;
-        }
-
-        .glass {
-            background: var(--glass); backdrop-filter: blur(15px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px; padding: 20px;
-            display: flex; flex-direction: column; gap: 12px;
-            width: 260px;
-        }
-
-        .main-viewer {
-            flex-grow: 1; border-radius: 15px; border: 1px solid rgba(0, 242, 255, 0.3);
-            box-shadow: inset 0 0 30px rgba(0, 0, 0, 1);
-            position: relative;
-        }
-
+        /* Buttons */
         button {
-            background: transparent; border: 1px solid var(--neon-blue);
-            color: var(--neon-blue); padding: 10px; cursor: pointer;
-            text-transform: uppercase; font-size: 0.75rem; transition: 0.3s;
+            background: none; border: 1px solid var(--neon); color: var(--neon);
+            padding: 12px; cursor: pointer; text-align: left; transition: 0.3s;
+            font-size: 0.9rem; letter-spacing: 1px;
         }
-
-        button:hover {
-            background: var(--neon-blue); color: black;
-            box-shadow: 0 0 15px var(--neon-blue);
-        }
-
-        #status-tag { color: var(--neon-blue); font-weight: bold; font-family: monospace; }
+        button:hover { background: var(--neon); color: black; box-shadow: 0 0 15px var(--neon); }
+        
+        h2 { color: var(--neon); margin-bottom: 5px; }
+        p { line-height: 1.6; font-size: 0.95rem; color: #ccc; }
     </style>
 </head>
 <body>
 
-    <div class="scanline"></div>
-    
-    <nav class="glass-header">
-        <div class="logo">BIOSYNTH // MOLECULAR_LAB</div>
-        <div class="search-box">
-            <input type="text" id="pdb-input" placeholder="Enter PDB ID (e.g., 1A21)">
-            <button onclick="loadNewProtein()">FETCH DATA</button>
-        </div>
-    </nav>
+    <div class="wrapper">
+        <aside class="sidebar">
+            <h2>Micro-Lecturer</h2>
+            <p>Select a visualization to understand how this protein is built.</p>
+            
+            <button onclick="explain('cartoon')">1. The Ribbon Path</button>
+            <button onclick="explain('sphere')">2. Atomic Volume</button>
+            <button onclick="explain('stick')">3. Chemical Bonds</button>
+            <button onclick="explain('surface')">4. Molecular Skin</button>
 
-    <main class="viewer-layout">
-        <aside class="sidebar-left glass">
-            <h3>ANALYTICS</h3>
-            <div>ID: <span id="status-tag">LOADING...</span></div>
-            <p style="font-size: 0.85rem; opacity: 0.7;">
-                Visualizing atomic coordinates and secondary structures in real-time.
-            </p>
-            <hr style="border: 0.5px solid #333; width: 100%;">
-            <button onclick="updateView('cartoon')">Spectrum Ribbon</button>
-            <button onclick="updateView('sphere')">Space Fill</button>
-            <button onclick="updateView('stick')">Atomic Sticks</button>
-            <button onclick="updateView('surface')">Molecular Surface</button>
-        </aside>
+            <div class="info-card" id="explainer-box">
+                <b id="info-title" style="color:var(--neon)">Ready to Explore</b>
+                <p id="info-text">Click a button to start the lesson. I will explain the physics and biology of what you see.</p>
+            </div>
 
-        <div id="container-01" class="main-viewer"></div>
-
-        <aside class="sidebar-right glass">
-            <h3>CONTROLS</h3>
-            <button onclick="toggleSpin()" style="border-color: #ff00ff; color: #ff00ff;">STOP/START SPIN</button>
-            <button onclick="viewer.zoomTo()">RE-CENTER</button>
-            <div style="font-size: 0.7rem; margin-top: auto; opacity: 0.5;">
-                LEFT CLICK: ROTATE<br>
-                RIGHT CLICK: PAN<br>
-                SCROLL: ZOOM
+            <div style="margin-top:auto">
+                <small>Current ID: <b id="id-display">4INS</b></small>
             </div>
         </aside>
-    </main>
+
+        <main class="viewer-container">
+            <div id="mol-view"></div>
+        </main>
+    </div>
 
     <script>
-        /* 3. THE JAVASCRIPT (The "Brain") */
         let viewer;
-        let isSpinning = true;
-
+        
         window.onload = function() {
-            // Setup viewer
-            viewer = $3Dmol.createViewer(document.querySelector('#container-01'), { backgroundColor: 'black' });
-            
-            // Load default (Human Insulin)
+            viewer = $3Dmol.createViewer(document.querySelector('#mol-view'), { backgroundColor: 'black' });
             loadProtein("4ins");
         };
 
         function loadProtein(pdbId) {
-            document.getElementById('status-tag').innerText = "FETCHING...";
-            viewer.clear(); // Wipe old protein
-
+            viewer.clear();
             $3Dmol.download("pdb:" + pdbId, viewer, {}, function() {
-                // Apply Initial Color and Style
                 viewer.setStyle({}, {cartoon: {color: 'spectrum'}});
                 viewer.zoomTo();
                 viewer.render();
-                
-                // Start the cinematic animation
                 viewer.spin(true);
-                isSpinning = true;
-                document.getElementById('status-tag').innerText = pdbId.toUpperCase();
             });
         }
 
-        function loadNewProtein() {
-            let val = document.getElementById('pdb-input').value.trim();
-            if(val) loadProtein(val);
-        }
+        function explain(type) {
+            const title = document.getElementById('info-title');
+            const text = document.getElementById('info-text');
 
-        function updateView(type) {
-            viewer.removeAllShapes();
-            viewer.removeAllSurfaces();
-            
-            if (type === 'cartoon') {
+            if(type === 'cartoon') {
                 viewer.setStyle({}, {cartoon: {color: 'spectrum'}});
-            } else if (type === 'sphere') {
+                title.innerText = "The Ribbon Model";
+                text.innerText = "This doesn't show atoms. It shows the 'backbone' path. The curls are Alpha-Helices (like springs) and the arrows are Beta-Sheets. This is how the protein folds to do its job.";
+            } 
+            else if(type === 'sphere') {
                 viewer.setStyle({}, {sphere: {}});
-            } else if (type === 'stick') {
-                viewer.setStyle({}, {stick: {radius: 0.2, colorscheme: 'Jmol'}});
-            } else if (type === 'surface') {
+                title.innerText = "Space-Filling Model";
+                text.innerText = "This is what the protein actually 'looks' like to another molecule. Each sphere is an atom. It shows how crowded and solid the protein really is.";
+            }
+            else if(type === 'stick') {
+                viewer.setStyle({}, {stick: {radius:0.2}});
+                title.innerText = "The Skeletal View";
+                text.innerText = "Here, we see the individual chemical bonds. Carbon is usually grey, Oxygen is red, and Nitrogen is blue. This is used by chemists to see how the 'parts' connect.";
+            }
+            else if(type === 'surface') {
                 viewer.setStyle({}, {cartoon: {color: 'white'}});
-                viewer.addSurface($3Dmol.SurfaceType.VDW, {opacity: 0.5, color: 'cyan'});
+                viewer.addSurface($3Dmol.SurfaceType.VDW, {opacity: 0.7, color: 'spectrum'});
+                title.innerText = "Molecular Surface";
+                text.innerText = "This shows the 'skin' of the protein. It helps scientists see 'pockets' where drugs or other molecules might dock, like a key fitting into a lock.";
             }
             viewer.render();
-        }
-
-        function toggleSpin() {
-            isSpinning = !isSpinning;
-            viewer.spin(isSpinning);
         }
     </script>
 </body>
