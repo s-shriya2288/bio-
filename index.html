@@ -2,328 +2,424 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GENESIS | Ultimate Molecular Intelligence</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>SafeFund | Supreme Terminal Elite</title>
     
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/3Dmol/2.0.4/3Dmol-min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
 
     <style>
-        :root {
-            --neon: #00f2ff;
-            --magenta: #ff00ff;
-            --bg-dark: #020408;
-            --glass: rgba(10, 15, 25, 0.9);
-            --border: rgba(0, 242, 255, 0.3);
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;800&display=swap');
+
+        :root { 
+            --bg: #05070a; 
+            --panel: #11141b; 
+            --border: #1a1f26; 
+            --accent: #426cf5; 
         }
 
-        * { box-sizing: border-box; }
-
-        body {
-            margin: 0;
-            background-color: var(--bg-dark);
-            color: white;
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            height: 100vh;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
+        html, body { 
+            height: 100dvh; margin: 0; padding: 0; overflow: hidden; 
+            background: var(--bg); font-family: 'JetBrains Mono', monospace; color: #e5e7eb; 
         }
 
-        /* Top Navigation HUD */
-        header {
-            height: 60px;
-            background: var(--glass);
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 30px;
-            backdrop-filter: blur(10px);
-            z-index: 100;
+        .app-shell { display: flex; flex-direction: column; height: 100dvh; }
+        .hidden { display: none !important; }
+
+        /* UI Elements */
+        .top-bar { 
+            display: flex; justify-content: space-between; align-items: center; 
+            padding: 15px 20px; border-bottom: 1px solid var(--border); 
+            background: var(--bg); flex-shrink: 0; 
         }
 
-        .logo {
-            font-weight: 800;
-            letter-spacing: 3px;
-            color: var(--neon);
-            text-shadow: 0 0 10px var(--neon);
+        .nav-header { 
+            display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; 
+            padding: 10px; background: var(--bg); border-bottom: 1px solid var(--border); flex-shrink: 0; 
         }
 
-        /* Main Workspace */
-        .workspace {
-            display: grid;
-            grid-template-columns: 350px 1fr 300px;
-            flex-grow: 1;
-            gap: 10px;
-            padding: 10px;
-            position: relative;
+        .nav-tab { 
+            padding: 12px 2px; text-align: center; font-weight: 800; font-size: 8px; 
+            text-transform: uppercase; background: var(--panel); color: #8b949e; 
+            border-radius: 6px; border: 1px solid var(--border); cursor: pointer; 
         }
 
-        /* Sidebar Styling */
-        .sidebar {
-            background: var(--glass);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            overflow-y: auto;
+        .nav-tab.active { background: var(--accent); color: white; border-color: var(--accent); }
+
+        .scroll-zone { flex: 1; overflow-y: auto; padding: 20px; padding-bottom: 120px; }
+
+        .sf-input { 
+            background: var(--panel); border: 1px solid var(--border); border-radius: 12px; 
+            padding: 18px; width: 100%; color: #fff; font-size: 14px; font-weight: 700; outline: none; 
         }
 
-        h3 {
-            font-size: 0.8rem;
-            color: var(--neon);
-            text-transform: uppercase;
-            margin: 20px 0 10px 0;
-            border-bottom: 1px solid var(--border);
-            padding-bottom: 5px;
+        .card-base { 
+            background: rgba(17, 20, 27, 0.5); border: 1px solid var(--border); 
+            border-radius: 16px; padding: 20px; margin-bottom: 12px; 
         }
 
-        /* The 3D Viewport */
-        #viewport-container {
-            position: relative;
-            background: radial-gradient(circle, #0d1117 0%, #000 100%);
-            border-radius: 12px;
-            border: 1px solid rgba(255,255,255,0.05);
-            box-shadow: inset 0 0 50px rgba(0,0,0,1);
+        .progress-bg { background: #1a1f26; height: 6px; border-radius: 10px; margin-top: 15px; overflow: hidden; }
+        .progress-fill { background: #3b82f6; height: 100%; transition: width 0.8s ease; }
+
+        /* Overlays */
+        #override-modal, #sheet-overlay-bg, #receipt-modal { 
+            position: fixed; inset: 0; background: rgba(0,0,0,0.95); 
+            z-index: 3000; display: none; align-items: center; justify-content: center; backdrop-filter: blur(12px); 
         }
 
-        /* Advanced Buttons */
-        .control-group { display: flex; flex-direction: column; gap: 8px; }
+        #collect-sheet { 
+            position: fixed; bottom: 0; left: 0; right: 0; background: #0f1218; 
+            border-top: 3px solid #3b82f6; border-radius: 32px 32px 0 0; padding: 35px; 
+            transform: translateY(100%); transition: transform 0.4s; z-index: 4000; 
+        }
+
+        #collect-sheet.open { transform: translateY(0); }
+
+        #login-btn { transition: all 0.3s; position: relative; }
+        #login-btn.holding { transform: scale(0.96); opacity: 0.8; }
         
-        button {
-            background: rgba(0, 242, 255, 0.05);
-            border: 1px solid var(--neon);
-            color: var(--neon);
-            padding: 12px;
-            border-radius: 4px;
-            cursor: pointer;
-            text-transform: uppercase;
-            font-size: 0.7rem;
-            font-weight: bold;
-            transition: all 0.3s ease;
-            text-align: left;
+        .receipt-box { 
+            background: #fff; color: #000; padding: 30px; border-radius: 4px; 
+            width: 90%; max-width: 350px; font-family: 'Courier New', monospace; 
         }
-
-        button:hover {
-            background: var(--neon);
-            color: black;
-            box-shadow: 0 0 20px var(--neon);
-        }
-
-        button.active {
-            background: var(--neon);
-            color: black;
-        }
-
-        /* Console Output */
-        #console-stream {
-            background: rgba(0,0,0,0.4);
-            border: 1px solid #111;
-            padding: 10px;
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 0.75rem;
-            color: #00ffaa;
-            height: 150px;
-            overflow-y: auto;
-            border-radius: 4px;
-        }
-
-        /* Input Box */
-        .search-container {
-            margin-top: auto;
-            display: flex;
-            gap: 5px;
-        }
-
-        input {
-            flex-grow: 1;
-            background: #000;
-            border: 1px solid var(--border);
-            color: white;
-            padding: 10px;
-            border-radius: 4px;
-            outline: none;
-        }
-
-        input:focus { border-color: var(--neon); }
-
-        /* Animation Scanline */
-        .scanner-line {
-            position: absolute;
-            width: 100%;
-            height: 1px;
-            background: rgba(0, 242, 255, 0.2);
-            box-shadow: 0 0 10px var(--neon);
-            top: 0;
-            z-index: 5;
-            animation: scanMove 4s infinite linear;
-            pointer-events: none;
-        }
-
-        @keyframes scanMove {
-            0% { top: 0%; }
-            100% { top: 100%; }
-        }
-
     </style>
 </head>
 <body>
 
-    <header>
-        <div class="logo">GENESIS // PROTEIN_LAB</div>
-        <div style="font-size: 0.7rem; color: #555;">v4.0.2 STABLE_RELEASE</div>
-    </header>
-
-    <div class="workspace">
-        <aside class="sidebar">
-            <h3>Structure Intel</h3>
-            <div id="data-readout" style="font-family: monospace; font-size: 0.8rem;">
-                TARGET_ID: <span id="current-pdb" style="color:var(--magenta)">4INS</span><br>
-                LOAD_STATE: <span id="load-state" style="color:var(--neon)">READY</span>
-            </div>
-
-            <h3>Visualization Engine</h3>
-            <div class="control-group">
-                <button onclick="changeView('cartoon', this)" class="active">Ribbon (Fold Path)</button>
-                <button onclick="changeView('sphere', this)">Space-Fill (All Atoms)</button>
-                <button onclick="changeView('stick', this)">Backbone (Bonds)</button>
-                <button onclick="changeView('surface', this)">Molecular Surface</button>
-            </div>
-
-            <h3>Analysis Log</h3>
-            <div id="console-stream">
-                [SYSTEM]: Booting...<br>
-                [SYSTEM]: 3D Engine Ready.<br>
-                [INFO]: Awaiting PDB sequence.
-            </div>
-        </aside>
-
-        <main id="viewport-container">
-            <div class="scanner-line"></div>
-            <div id="viewer-div" style="width: 100%; height: 100%;"></div>
-        </main>
-
-        <aside class="sidebar">
-            <h3>Movement Controls</h3>
-            <button onclick="toggleSpin()">START / STOP SPIN</button>
-            <button onclick="viewer.zoomTo()">RESET CAMERA</button>
+<div class="app-shell">
+    
+    <section id="scr-auth" class="flex flex-col items-center justify-center h-full p-8 text-center">
+        <h1 class="text-8xl font-black text-blue-600 italic mb-10">SF</h1>
+        <div class="w-full max-w-xs">
+            <input id="login-pin" type="tel" placeholder="ENTER PIN" class="sf-input text-center text-3xl tracking-widest mb-6">
             
-            <h3>Advanced Filters</h3>
-            <button onclick="applyGhost()" style="border-color: var(--magenta); color: var(--magenta);">Toggle X-RAY Mode</button>
+            <button id="login-btn" 
+                onmousedown="startHold()" onmouseup="endHold()" 
+                ontouchstart="startHold()" ontouchend="endHold()"
+                onclick="handleLogin()"
+                class="w-full bg-blue-600 p-5 rounded-2xl font-black uppercase text-xl text-white">
+                Access System
+            </button>
             
-            <p style="font-size: 0.7rem; color: #777; margin-top: 20px;">
-                Scroll to zoom. Left-click to rotate. Right-click to pan molecule.
+            <p id="lockout-timer" class="hidden text-red-500 font-bold mt-4 text-[10px] uppercase">
+                Security Lockout: <span id="timer-sec">30</span>s
             </p>
+        </div>
+    </section>
 
-            <div class="search-container">
-                <input type="text" id="pdb-search" placeholder="Enter PDB (e.g. 1GFL)">
-                <button onclick="fetchMolecule()">LOAD</button>
-            </div>
-        </aside>
+    <div id="main-admin" class="hidden flex flex-col h-full">
+        <div class="top-bar">
+            <span class="text-blue-500 font-black text-[10px] italic">MASTER_ADMIN</span>
+            <button onclick="location.reload()" class="text-red-500 font-black text-[10px] uppercase">Logout</button>
+        </div>
+        <header class="nav-header">
+            <div onclick="switchTab('ledger')" id="t-ledger" class="nav-tab active">Ledger</div>
+            <div onclick="switchTab('vault')" id="t-vault" class="nav-tab">Vault</div>
+            <div onclick="switchTab('reg')" id="t-reg" class="nav-tab">Registry</div>
+            <div onclick="switchTab('staff')" id="t-staff" class="nav-tab">Staff</div>
+            <div onclick="switchTab('ops')" id="t-ops" class="nav-tab">Ops</div>
+        </header>
+        <main class="scroll-zone">
+            <section id="tab-ledger">
+                <input type="text" id="ledger-search" placeholder="SEARCH CLIENTS..." class="sf-input mb-6 italic text-xs" onkeyup="sync()">
+                <div id="ledger-cont"></div>
+            </section>
+            <section id="tab-vault" class="hidden text-center">
+                <p class="text-[10px] text-blue-400 font-bold uppercase mb-2">Total Stored Capital</p>
+                <div id="vault-total" class="text-6xl font-black italic mb-10">₹0</div>
+                <button onclick="downloadDetailedAudit()" class="w-full bg-blue-600/10 text-blue-400 border border-blue-600/20 p-4 rounded-xl font-black text-[10px] uppercase">Export Master Audit</button>
+            </section>
+            <section id="tab-reg" class="hidden space-y-4">
+                <select id="reg-channel" class="sf-input"><option>LIC</option><option>POST OFFICE</option></select>
+                <input id="reg-id" placeholder="ACCOUNT ID" class="sf-input">
+                <input id="reg-name" placeholder="CLIENT NAME" class="sf-input uppercase">
+                <input id="reg-phone" placeholder="PIN CODE (CLIENT LOGIN)" class="sf-input">
+                <input id="reg-due" type="number" placeholder="DAILY TARGET" class="sf-input">
+                <button onclick="enrollClient()" class="w-full bg-blue-600 p-6 rounded-xl font-black uppercase text-white">Register</button>
+            </section>
+            <section id="tab-staff" class="hidden space-y-4">
+                <input id="st-name" placeholder="STAFF NAME" class="sf-input uppercase">
+                <input id="st-pin" placeholder="ACCESS PIN" class="sf-input">
+                <button onclick="addStaff()" class="bg-white text-black w-full p-4 rounded-xl font-bold uppercase">Add Staff</button>
+                <div id="staff-cont" class="pt-6"></div>
+            </section>
+            <section id="tab-ops" class="hidden"><div id="ops-list-cont" class="space-y-2"></div></section>
+        </main>
     </div>
 
-    <script>
-        let viewer;
-        let isSpinning = true;
-        let isGhost = false;
+    <div id="main-worker" class="hidden flex flex-col h-full">
+        <div class="top-bar">
+            <div onclick="toggleWorkerSearch()">
+                <span id="wk-name" class="text-blue-500 font-black text-[10px] uppercase block">WORKER_MODE</span>
+                <span id="wk-pending" class="text-[9px] font-bold text-orange-500">PENDING: ₹0</span>
+            </div>
+            <button onclick="location.reload()" class="text-gray-500 font-bold text-[10px]">EXIT</button>
+        </div>
+        <div id="wk-search-box" class="px-5 pt-4 hidden">
+            <input type="text" id="wk-search" placeholder="FILTER CLIENTS..." class="sf-input !py-3 !text-xs bg-white/5" onkeyup="sync()">
+        </div>
+        <main id="worker-grid" class="scroll-zone"></main>
+    </div>
 
-        // 1. Initialize the viewer
-        window.onload = function() {
-            viewer = $3Dmol.createViewer(document.getElementById('viewer-div'), { backgroundColor: 'black' });
-            loadStructure("4ins"); // Load Insulin by default
-        };
+    <div id="main-client" class="hidden flex flex-col h-full">
+        <div class="top-bar">
+            <span class="text-blue-500 font-black text-[10px]">CLIENT_PASSBOOK</span>
+            <button onclick="location.reload()" class="text-gray-500 font-bold text-[10px]">CLOSE</button>
+        </div>
+        <div class="p-10 text-center">
+            <h1 id="cl-bal" class="text-7xl font-black italic text-white">₹0</h1>
+            <p id="cl-name" class="text-blue-500 font-bold uppercase text-[10px] mt-2"></p>
+        </div>
+        <div class="scroll-zone border-t border-white/5" id="cl-hist"></div>
+    </div>
+</div>
 
-        // 2. Load Function (The Core Data Fetcher)
-        function loadStructure(id) {
-            updateLog(`> Initializing fetch for: ${id.toUpperCase()}`);
-            document.getElementById('load-state').innerText = "LOADING...";
-            
-            viewer.clear(); // Clear the stage
+<div id="override-modal">
+    <div class="card-base w-[90%] max-w-md bg-black border border-blue-600/30">
+        <input id="ov-bal" class="sf-input !text-4xl font-black italic text-blue-500 text-center mb-6" type="number">
+        <button onclick="saveOverride()" class="w-full bg-blue-600 p-5 rounded-2xl font-black uppercase text-white">Save Balance</button>
+        <button onclick="closeModals()" class="w-full text-[10px] mt-4 uppercase opacity-50">Cancel</button>
+    </div>
+</div>
 
-            $3Dmol.download("pdb:" + id, viewer, {}, function() {
-                // Default Visual Style
-                viewer.setStyle({}, {cartoon: {color: 'spectrum'}});
-                viewer.zoomTo();
-                viewer.render();
-                viewer.spin(true);
-                
-                document.getElementById('current-pdb').innerText = id.toUpperCase();
-                document.getElementById('load-state').innerText = "LIVE";
-                updateLog(`> Data sequence ${id} stabilized.`);
-                updateLog(`> Total residue count analyzed.`);
+<div id="sheet-overlay-bg" onclick="closeModals()"></div>
+<div id="collect-sheet">
+    <p id="sh-name" class="text-3xl font-black text-blue-500 italic uppercase"></p>
+    <p id="sh-info" class="text-[10px] text-gray-500 font-bold mb-8 uppercase"></p>
+    <input id="sh-amt" type="number" placeholder="₹ 0" class="sf-input text-4xl py-10 bg-black/40 mb-6 text-center text-white">
+    <button onclick="submitCollection()" class="w-full bg-blue-600 p-6 rounded-2xl font-black text-xl uppercase text-white">Confirm</button>
+</div>
+
+<div id="receipt-modal">
+    <div class="receipt-box text-center">
+        <h2 class="font-black text-xl mb-4">SafeFund Receipt</h2>
+        <div id="receipt-text" class="text-left text-[12px] whitespace-pre-wrap mb-6"></div>
+        <button onclick="closeModals()" class="w-full bg-black text-white p-3 font-bold uppercase text-[10px]">Done</button>
+    </div>
+</div>
+
+<script>
+    /* --- CONFIG & FIREBASE --- */
+    const firebaseConfig = { 
+        apiKey: "AIzaSyCLZr_vHKRZw9mr27IFzkKvB6SD4Keksas", 
+        projectId: "bank-d463e", 
+        appId: "1:293213633601:web:848fa363878f3230345ac0" 
+    };
+    firebase.initializeApp(firebaseConfig); 
+    const db = firebase.firestore();
+
+    let curUser = '';
+    let activeCID = '';
+    let loginAttempts = 0;
+    let holdTimer;
+    let adminGateUnlocked = false;
+
+    /* --- SECURITY GATES --- */
+    function startHold() {
+        document.getElementById('login-btn').classList.add('holding');
+        holdTimer = setTimeout(() => {
+            adminGateUnlocked = true;
+            document.getElementById('login-btn').innerText = "SECURE MODE UNLOCKED";
+            document.getElementById('login-btn').style.background = "#10b981";
+        }, 2000);
+    }
+
+    function endHold() {
+        document.getElementById('login-btn').classList.remove('holding');
+        clearTimeout(holdTimer);
+    }
+
+    async function handleLogin() {
+        if (loginAttempts >= 3) return;
+        const pin = document.getElementById('login-pin').value.trim();
+
+        if(pin === "0000") {
+            if(adminGateUnlocked) { show('main-admin'); sync(); return; }
+            else { alert("Security validation failed."); return; }
+        }
+
+        const wk = await db.collection('workers').where("pin", "==", pin).get();
+        if(!wk.empty) { 
+            curUser = wk.docs[0].data().name; 
+            document.getElementById('wk-name').innerText = curUser; 
+            show('main-worker'); sync(); return; 
+        }
+
+        const cl = await db.collection('accounts').where("phone", "==", pin).get();
+        if(!cl.empty) { 
+            show('main-client'); renderPassbook(cl.docs[0].data()); return; 
+        }
+
+        loginAttempts++;
+        if(loginAttempts >= 3) startLockout();
+        else alert(`Incorrect PIN. Strike ${loginAttempts}/3`);
+    }
+
+    function startLockout() {
+        document.getElementById('login-btn').disabled = true;
+        document.getElementById('lockout-timer').classList.remove('hidden');
+        let t = 30;
+        const iv = setInterval(() => {
+            t--; document.getElementById('timer-sec').innerText = t;
+            if(t <= 0) { clearInterval(iv); location.reload(); }
+        }, 1000);
+    }
+
+    /* --- CORE SYNC ENGINE --- */
+    function sync() {
+        const adminQ = document.getElementById('ledger-search')?.value.toUpperCase() || "";
+        const workerQ = document.getElementById('wk-search')?.value.toUpperCase() || "";
+
+        db.collection('accounts').onSnapshot(snapshot => {
+            const lCont = document.getElementById('ledger-cont');
+            const wGrid = document.getElementById('worker-grid');
+            if(lCont) lCont.innerHTML = '';
+            if(wGrid) wGrid.innerHTML = '';
+
+            let totalVault = 0;
+            let totalPending = 0;
+
+            snapshot.forEach(doc => {
+                const acc = doc.data();
+                const aid = doc.id;
+                const totalTarget = Number(acc.dailyDue || 0) + Number(acc.carryForward || 0);
+
+                const today = new Date().toLocaleDateString();
+                let paidToday = 0;
+                (acc.history || []).forEach(h => {
+                    if(h.date === today && h.type === 'PAYMENT') paidToday += Number(h.amt);
+                });
+
+                const pending = Math.max(0, totalTarget - paidToday);
+                totalPending += pending;
+                totalVault += Number(acc.balance || 0);
+
+                if(lCont && acc.name.includes(adminQ)) {
+                    lCont.innerHTML += `
+                    <div class="card-base flex justify-between items-center">
+                        <div><p class="text-[8px] text-blue-500 font-bold">${acc.channel}</p><h3 class="font-black text-white uppercase">${acc.name}</h3><p class="text-2xl italic font-black">₹${acc.balance}</p></div>
+                        <button onclick="openOverride('${aid}')" class="bg-blue-600/20 text-blue-500 border border-blue-600/30 px-4 py-2 rounded-lg text-[9px] font-black">EDIT</button>
+                    </div>`;
+                }
+
+                if(wGrid && acc.name.includes(workerQ)) {
+                    const perc = totalTarget > 0 ? (paidToday / totalTarget) * 100 : 0;
+                    wGrid.innerHTML += `
+                    <div class="card-base">
+                        <div class="flex justify-between font-bold text-[10px] mb-2">
+                            <span>${acc.name}</span>
+                            <span class="${pending > 0 ? 'text-orange-500' : 'text-emerald-500'}">DUE: ₹${pending}</span>
+                        </div>
+                        <div class="progress-bg"><div class="progress-fill" style="width:${perc}%"></div></div>
+                        <button onclick="openCollect('${aid}','${acc.name}',${totalTarget},${paidToday})" class="w-full mt-4 bg-blue-600 p-4 rounded-xl font-black text-[10px] uppercase text-white">Record Payment</button>
+                    </div>`;
+                }
             });
-        }
+            if(document.getElementById('vault-total')) document.getElementById('vault-total').innerText = "₹" + totalVault;
+            if(document.getElementById('wk-pending')) document.getElementById('wk-pending').innerText = "PENDING: ₹" + totalPending;
+        });
+    }
 
-        // 3. View Switcher (This creates the "Different Structures")
-        function changeView(mode, btn) {
-            // UI Update
-            document.querySelectorAll('.control-group button').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
+    /* --- COLLECTION LOGIC --- */
+    function openCollect(id, name, goal, paid) {
+        activeCID = id;
+        document.getElementById('sh-name').innerText = name;
+        document.getElementById('sh-info').innerText = `GOAL: ₹${goal} | PAID: ₹${paid}`;
+        document.getElementById('sheet-overlay-bg').style.display = 'flex';
+        document.getElementById('collect-sheet').classList.add('open');
+    }
 
-            // Reset stage components
-            viewer.removeAllSurfaces();
-            viewer.removeAllShapes();
+    async function submitCollection() {
+        const amt = Number(document.getElementById('sh-amt').value);
+        if(!amt) return;
+        const ref = db.collection('accounts').doc(activeCID);
+        const data = (await ref.get()).data();
+        const target = Number(data.dailyDue || 0) + Number(data.carryForward || 0);
+        const newBal = (data.balance || 0) + amt;
 
-            if (mode === 'cartoon') {
-                // Secondary Structure Model
-                viewer.setStyle({}, {cartoon: {color: 'spectrum'}});
-                updateLog("> Rendering Fold-Architecture (Ribbon).");
-            } 
-            else if (mode === 'sphere') {
-                // Atomic Volume Model
-                viewer.setStyle({}, {sphere: {colorscheme: 'Jmol', scale: 1.0}});
-                updateLog("> Rendering Space-Fill (Atomic Volume).");
-            } 
-            else if (mode === 'stick') {
-                // Chemical Bond Model
-                viewer.setStyle({}, {stick: {radius: 0.2, colorscheme: 'amino acid'}});
-                updateLog("> Rendering Skeletal Bonds (Stick).");
-            } 
-            else if (mode === 'surface') {
-                // Molecular Skin Model
-                viewer.setStyle({}, {cartoon: {color: 'white', opacity: 0.5}});
-                viewer.addSurface($3Dmol.SurfaceType.VDW, {opacity: 0.7, colorscheme: 'spectrum'});
-                updateLog("> Generating Molecular Envelope Surface.");
-            }
-            
-            viewer.render();
-        }
+        await ref.update({
+            balance: newBal,
+            carryForward: Math.max(0, target - amt),
+            history: firebase.firestore.FieldValue.arrayUnion({
+                amt: amt, type: 'PAYMENT', staff: curUser, date: new Date().toLocaleDateString(),
+                time: new Date().toLocaleTimeString()
+            })
+        });
 
-        // 4. Analysis Helper Functions
-        function updateLog(msg) {
-            const log = document.getElementById('console-stream');
-            log.innerHTML += `<br>${msg}`;
-            log.scrollTop = log.scrollHeight;
-        }
+        // Show Receipt
+        document.getElementById('receipt-text').innerText = 
+            `SafeFund Terminal\n--------------------------\nDate: ${new Date().toLocaleDateString()}\nClient: ${data.name}\nCollected: ₹${amt}\nTotal Balance: ₹${newBal}\nStaff: ${curUser}\n--------------------------\nThank You.`;
+        
+        closeModals();
+        document.getElementById('receipt-modal').style.display = 'flex';
+        document.getElementById('sh-amt').value = '';
+    }
 
-        function fetchMolecule() {
-            let input = document.getElementById('pdb-search').value.trim();
-            if(input.length === 4) {
-                loadStructure(input);
-            } else {
-                updateLog("> ERROR: Invalid PDB ID (Must be 4 chars).");
-            }
-        }
+    /* --- ADMIN UTILS --- */
+    async function enrollClient() {
+        await db.collection('accounts').add({
+            channel: document.getElementById('reg-channel').value,
+            accId: document.getElementById('reg-id').value,
+            name: document.getElementById('reg-name').value.toUpperCase(),
+            phone: document.getElementById('reg-phone').value,
+            dailyDue: Number(document.getElementById('reg-due').value),
+            carryForward: 0, balance: 0, history: []
+        });
+        switchTab('ledger');
+    }
 
-        function toggleSpin() {
-            isSpinning = !isSpinning;
-            viewer.spin(isSpinning);
-            updateLog(`> Rotation Matrix: ${isSpinning ? 'ACTIVE' : 'LOCKED'}`);
-        }
+    async function openOverride(id) {
+        activeCID = id;
+        const d = (await db.collection('accounts').doc(id).get()).data();
+        document.getElementById('ov-bal').value = d.balance;
+        document.getElementById('override-modal').style.display = 'flex';
+    }
 
-        function applyGhost() {
-            isGhost = !isGhost;
-            if(isGhost) {
-                viewer.setStyle({}, {cartoon: {opacity: 0.3}, sphere: {opacity: 0.2}});
-                updateLog("> X-Ray Filter Enabled.");
-            } else {
-                viewer.setStyle({}, {cartoon: {opacity: 1}, sphere: {opacity: 1}});
-                updateLog("> X-Ray Filter Disabled.");
-            }
-            viewer.render();
-        }
-    </script>
+    async function saveOverride() {
+        await db.collection('accounts').doc(activeCID).update({ balance: Number(document.getElementById('ov-bal').value) });
+        closeModals();
+    }
+
+    async function addStaff() {
+        const n = document.getElementById('st-name').value;
+        const p = document.getElementById('st-pin').value;
+        if(n && p) { await db.collection('workers').add({ name: n, pin: p }); location.reload(); }
+    }
+
+    /* --- UI HELPERS --- */
+    function show(id) {
+        ['scr-auth','main-admin','main-worker','main-client'].forEach(s => document.getElementById(s).classList.add('hidden'));
+        document.getElementById(id).classList.remove('hidden');
+    }
+
+    function switchTab(t) {
+        ['ledger','vault','reg','staff','ops'].forEach(x => {
+            document.getElementById('tab-'+x).classList.add('hidden');
+            document.getElementById('t-'+x).classList.remove('active');
+        });
+        document.getElementById('tab-'+t).classList.remove('hidden');
+        document.getElementById('t-'+t).classList.add('active');
+    }
+
+    function closeModals() {
+        ['override-modal','sheet-overlay-bg','receipt-modal'].forEach(m => document.getElementById(m).style.display = 'none');
+        document.getElementById('collect-sheet').classList.remove('open');
+    }
+
+    function toggleWorkerSearch() { document.getElementById('wk-search-box').classList.toggle('hidden'); }
+
+    function renderPassbook(d) {
+        document.getElementById('cl-bal').innerText = "₹" + (d.balance || 0);
+        document.getElementById('cl-name').innerText = d.name;
+        const cont = document.getElementById('cl-hist'); cont.innerHTML = '';
+        (d.history || []).reverse().forEach(e => {
+            cont.innerHTML += `<div class="p-4 bg-white/5 rounded-xl flex justify-between text-[10px] mb-2 border border-white/5">
+                <span>${e.date}</span><span class="font-black">₹${e.amt}</span>
+            </div>`;
+        });
+    }
+</script>
 </body>
 </html>
